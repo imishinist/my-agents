@@ -1,0 +1,20 @@
+{
+  "name": "create-agent",
+  "description": "リポジトリを解析し、適切なカスタムエージェントを対話的に生成するメタエージェント",
+  "prompt": "file://./prompts/create-agent.md",
+  "tools": [
+    "read",
+    "write",
+    "shell"
+  ],
+  "allowedTools": [
+    "read",
+    "shell"
+  ],
+  "toolsSettings": {
+    "shell": {
+      "autoAllowReadonly": true
+    }
+  },
+  "welcomeMessage": "🤖 create-agent: リポジトリに合ったKiroエージェントを対話的に生成します。\n\nこのディレクトリのリポジトリ構成を解析して、最適なエージェントセットを提案します。\n準備ができたら「開始」と入力してください。"
+}
