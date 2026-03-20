@@ -98,7 +98,7 @@ Propose appropriate presets based on the analysis results.
 - tools: `["read", "write", "shell"]`
 - allowedTools: `["read"]`
 - toolsSettings.write.allowedPaths: source directories (e.g. `src/**`, `lib/**`, `app/**`)
-- resources: README.md, main config files
+- resources: `file://README.md`, main config files (all with `file://` prefix)
 - hooks.agentSpawn: `git status --porcelain`, `git branch --show-current`
 
 **review** — Code review
@@ -106,7 +106,7 @@ Propose appropriate presets based on the analysis results.
 - tools: `["read", "shell"]` (no write)
 - allowedTools: `["read", "shell"]`
 - toolsSettings.shell.allowedCommands: `["grep", "find", "wc", "head", "tail", "cat", "diff", "git diff", "git log"]` + linter commands
-- resources: coding standards, linter config
+- resources: coding standards, linter config (all with `file://` prefix)
 - hooks.agentSpawn: `git diff --name-only HEAD~1`
 
 **test** — Test creation & execution
@@ -115,14 +115,14 @@ Propose appropriate presets based on the analysis results.
 - allowedTools: `["read"]`
 - toolsSettings.write.allowedPaths: test directories (`tests/**`, `test/**`, `__tests__/**`, `**/test_*.py`, `**/*_test.go`)
 - toolsSettings.shell.allowedCommands: test runner commands
-- resources: test config files
+- resources: test config files (all with `file://` prefix)
 
 **deploy** — Deploy & infrastructure
 - Recommended: when CDK, Terraform, Dockerfile detected
 - tools: `["read", "write", "shell", "aws"]`
 - allowedTools: `["read"]`
 - toolsSettings.write.allowedPaths: infra files (`infra/**`, `infrastructure/**`, `cdk/**`, `terraform/**`, `*.tf`, `Dockerfile`, `docker-compose.yml`)
-- resources: infra documentation
+- resources: infra documentation (all with `file://` prefix)
 - hooks.agentSpawn: `aws sts get-caller-identity` (when AWS)
 
 **architect** — Design & documentation
@@ -130,14 +130,14 @@ Propose appropriate presets based on the analysis results.
 - tools: `["read", "write"]`
 - allowedTools: `["read"]`
 - toolsSettings.write.allowedPaths: `["docs/**", "*.md", "diagrams/**", ".kiro/**"]`
-- resources: README.md, docs/**, architecture docs
+- resources: `file://README.md`, `file://docs/**`, architecture docs (all with `file://` prefix)
 
 **docs** — Documentation
 - Recommended: when docs/ exists or documentation is needed
 - tools: `["read", "write"]`
 - allowedTools: `["read", "write"]`
 - toolsSettings.write.allowedPaths: `["*.md", "docs/**"]`
-- resources: existing documentation
+- resources: existing documentation (all with `file://` prefix)
 
 #### Steering Presets
 
@@ -200,7 +200,7 @@ For each selected agent, confirm:
 2. tools adjustments
 3. allowedTools adjustments
 4. write target paths
-5. resources to include
+5. resources to include (must use `file://` prefix, e.g. `file://README.md`)
 6. hooks (agentSpawn commands)
 7. MCP servers to add
 8. model selection (default = system default)
@@ -242,10 +242,12 @@ If templates not found, generate directly based on the preset descriptions above
   "tools": [...],
   "allowedTools": [...],
   "toolsSettings": {...},
-  "resources": [...],
+  "resources": ["file://{path}", ...],
   "hooks": {...}
 }
 ```
+
+**Important**: All `resources` entries must use the `file://` prefix (e.g. `file://README.md`, `file://docs/guide.md`). Bare paths like `README.md` are not valid.
 
 #### Prompt .md Template
 
