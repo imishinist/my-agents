@@ -161,6 +161,11 @@ Propose appropriate presets based on the analysis results.
 - Content: meta-rule for agents to self-check guideline relevance after completing work
 - Template: use `steering-templates/self-update.md` as-is
 
+**sandbox-awareness** — Sandbox environment awareness
+- Recommended: all repositories (always recommended)
+- Content: detect sandbox-related permission errors and inform the user instead of retrying
+- Template: based on `steering-templates/sandbox-awareness.md`
+
 #### Proposal Format
 
 Present in Japanese:
@@ -178,6 +183,7 @@ Present in Japanese:
 
   ✅ doc-sync              — コード変更時にドキュメントも更新
   ✅ self-update           — ガイドライン自己更新
+  ✅ sandbox-awareness     — sandbox環境の権限エラー検知
   ⬚ coding-standards      — コーディング規約
   ⬚ architecture-decisions — 設計判断の記録（ADR）
 
@@ -316,6 +322,7 @@ After confirmation, generate files and show completion message:
 steering:
   - doc-sync: ドキュメント同期ルール
   - self-update: ガイドライン自己更新ルール
+  - sandbox-awareness: sandbox環境の権限エラー検知
 
 使い方:
   kiro-cli              # 起動後 /agent swap で切り替え
