@@ -1,21 +1,21 @@
-# ガイドライン自己更新ルール
+# Guideline Self-Update Rule
 
-## 目的
+## Purpose
 
-この steering ファイル群自体を、リポジトリの変化に合わせて最新に保つ。
+Keep these steering files up to date as the repository evolves.
 
-## ルール
+## Rules
 
-### 作業完了時のセルフチェック
+### Self-Check on Completion
 
-すべての作業を完了した後、以下を確認する:
+After completing any task, verify:
 
-1. 今回の作業で、既存のガイドラインと矛盾する変更をしていないか
-2. 新しいパターンや規約が暗黙的に生まれていないか（明文化すべきか）
-3. ガイドラインの記述が現状と乖離していないか
+1. Did this work contradict any existing guidelines?
+2. Did new patterns emerge that should be documented?
+3. Do the guidelines still accurately reflect the current state?
 
-### 更新が必要な場合
+### When Updates Are Needed
 
-- 該当する steering ファイルを直接更新する
-- 変更内容と理由をユーザーに説明する
-- 大きな方針変更の場合はユーザーの確認を取る
+- Update the relevant steering file directly
+- Explain the change and reasoning to the user
+- For significant policy changes, get user confirmation first

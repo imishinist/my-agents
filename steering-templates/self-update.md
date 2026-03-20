@@ -1,31 +1,31 @@
-# ガイドライン自己更新ルール
+# Guideline Self-Update Rule
 
-## 目的
+## Purpose
 
-steering ファイル（このファイル群）自体を、プロジェクトの変化に合わせて最新の状態に保つ。
+Keep steering files (these guidelines) up to date as the project evolves.
 
-## ルール
+## Rules
 
-### 作業完了時のセルフチェック
+### Self-Check on Completion
 
-すべての作業を完了した後、以下を確認する:
+After completing any task, verify:
 
-1. **今回の作業で、既存のガイドラインと矛盾する変更をしていないか**
-   - 例: コーディング規約で禁止しているパターンを使った場合、規約を更新するか作業を修正する
+1. **No contradictions**: Did this work introduce anything that conflicts with existing guidelines?
+   - e.g., If a pattern forbidden by coding standards was used, either update the standard or fix the code
 
-2. **新しいパターンや規約が暗黙的に生まれていないか**
-   - 例: 新しいディレクトリ構成を導入した場合、それをガイドラインに明文化する
+2. **No implicit conventions**: Did new patterns or conventions emerge that should be documented?
+   - e.g., If a new directory structure was introduced, document it in the guidelines
 
-3. **ガイドラインの記述が現状と乖離していないか**
-   - 例: 使わなくなったツールやライブラリへの言及が残っていないか
+3. **No stale content**: Do the guidelines still accurately reflect the current state?
+   - e.g., References to tools or libraries that are no longer used
 
-### 更新が必要な場合
+### When Updates Are Needed
 
-- 該当する steering ファイルを直接更新する
-- 変更内容と理由をユーザーに説明する
-- 大きな方針変更の場合はユーザーの確認を取る
+- Update the relevant steering file directly
+- Explain the change and reasoning to the user
+- For significant policy changes, get user confirmation first
 
-### 更新してはいけないケース
+### When NOT to Update
 
-- 一時的な例外や回避策のためにルールを緩めない
-- ユーザーの明示的な指示なしに、ルールの削除や大幅な緩和をしない
+- Do not relax rules for temporary workarounds
+- Do not delete or significantly weaken rules without explicit user instruction

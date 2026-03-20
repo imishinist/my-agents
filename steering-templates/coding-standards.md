@@ -1,49 +1,49 @@
-# コーディング規約
+# Coding Standards
 
-## 目的
+## Purpose
 
-プロジェクト全体で一貫したコードスタイルと品質を維持する。
+Maintain consistent code style and quality across the project.
 
-## 共通ルール
+## Common Rules
 
-### コードスタイル
+### Code Style
 
-- プロジェクトのリンター・フォーマッター設定に従う
-- 既存コードのスタイルに合わせる（新しいパターンを勝手に導入しない）
-- マジックナンバーや意味不明な文字列は定数化する
-- 関数やメソッドは単一責任にする
+- Follow the project's linter and formatter configuration
+- Match existing code style (do not introduce new patterns without discussion)
+- Extract magic numbers and unexplained strings into named constants
+- Keep functions and methods single-responsibility
 
-### 命名規則
+### Naming
 
-- 変数名・関数名は意図が伝わる名前にする
-- 略語は一般的に通じるもののみ使用（`id`, `url`, `api` 等）
-- ブール値は `is`, `has`, `can`, `should` 等のプレフィックスを付ける
+- Use names that convey intent
+- Only use widely understood abbreviations (`id`, `url`, `api`, etc.)
+- Prefix booleans with `is`, `has`, `can`, `should`
 
-### エラーハンドリング
+### Error Handling
 
-- エラーを握りつぶさない
-- ユーザーに見せるエラーメッセージは具体的にする
-- 予期しないエラーはログに記録する
+- Never swallow errors silently
+- Provide specific, actionable error messages for users
+- Log unexpected errors
 
-### セキュリティ
+### Security
 
-- シークレットやクレデンシャルをコードにハードコードしない
-- ユーザー入力は必ずバリデーションする
-- 依存パッケージの脆弱性に注意する
+- Never hardcode secrets or credentials
+- Always validate user input
+- Watch for dependency vulnerabilities
 
-### コメント
+### Comments
 
-- 「なぜ」を説明するコメントを書く（「何を」はコードで表現する）
-- TODO コメントには担当者または Issue 番号を付ける
-- 不要になったコメントアウトコードは削除する
+- Write comments that explain "why", not "what" (let code express the what)
+- Include assignee or issue number in TODO comments
+- Remove commented-out code that is no longer needed
 
-## 言語固有のルール
+## Language-Specific Rules
 
-このセクションはプロジェクトの言語に応じてカスタマイズする。
+Customize this section based on the project's language and framework.
 
-<!-- create-agent が言語検出結果に基づいて以下を生成:
-- TypeScript: strict mode, 型定義, import 規則
-- Rust: clippy ルール, エラーハンドリングパターン
-- Python: type hints, docstring 規約
+<!-- create-agent generates language-specific rules based on detection:
+- TypeScript: strict mode, type definitions, import conventions
+- Rust: clippy rules, error handling patterns
+- Python: type hints, docstring conventions
 - Go: error handling, naming conventions
-等 -->
+etc. -->

@@ -1,48 +1,48 @@
-# アーキテクチャ決定記録
+# Architecture Decision Records
 
-## 目的
+## Purpose
 
-設計上の重要な判断とその理由を記録し、将来の意思決定に活用する。
+Record important design decisions and their rationale for future reference.
 
-## ルール
+## Rules
 
-### 記録が必要なケース
+### When to Record
 
-- 新しいライブラリやフレームワークの採用
-- アーキテクチャパターンの選択（モノリス vs マイクロサービス等）
-- データベースやストレージの選定
-- API 設計方針の決定
-- 認証・認可方式の選択
-- デプロイ戦略の決定
-- 既存の設計判断を覆す変更
+- Adopting a new library or framework
+- Choosing an architecture pattern (monolith vs microservices, etc.)
+- Selecting a database or storage solution
+- Deciding on API design approach
+- Choosing authentication/authorization method
+- Deciding on deployment strategy
+- Overriding a previous design decision
 
-### 記録フォーマット
+### Record Format
 
-`docs/adr/` ディレクトリに以下のフォーマットで記録する:
+Store records in `docs/adr/` using this format:
 
 ```
-# ADR-{番号}: {タイトル}
+# ADR-{number}: {title}
 
-## ステータス
-提案 / 承認 / 廃止 / 置換（ADR-XXX に置換）
+## Status
+Proposed / Accepted / Deprecated / Superseded (by ADR-XXX)
 
-## コンテキスト
-この判断が必要になった背景や課題
+## Context
+Background and problem that necessitated this decision
 
-## 決定
-何を選択したか
+## Decision
+What was chosen
 
-## 理由
-なぜその選択をしたか。検討した代替案とその評価
+## Rationale
+Why this choice was made. Alternatives considered and their evaluation
 
-## 影響
-この決定によって生じる影響やトレードオフ
+## Consequences
+Impact and trade-offs resulting from this decision
 ```
 
-### 作業完了時のチェック
+### Completion Checklist
 
-設計に関わる変更を行った場合:
+When making design-related changes:
 
-1. 既存の ADR に影響する変更か確認する
-2. 新しい ADR が必要か判断する
-3. 既存の ADR のステータスを更新する必要があるか確認する
+1. Check if existing ADRs are affected
+2. Determine if a new ADR is needed
+3. Update the status of existing ADRs if necessary

@@ -1,35 +1,35 @@
-# ドキュメント同期ルール
+# Document Sync Rule
 
-## 目的
+## Purpose
 
-コードや設計に変更を加えた際、関連するドキュメントも同時に更新することを徹底する。
+Ensure related documentation is updated whenever code or design changes are made.
 
-## ルール
+## Rules
 
-### 変更時にドキュメント更新が必要なケース
+### When Documentation Updates Are Required
 
-- **API の変更**: エンドポイント追加・変更・削除時に API ドキュメントを更新
-- **設定項目の変更**: 環境変数、設定ファイルの項目が変わったら README やセットアップガイドを更新
-- **依存関係の変更**: パッケージ追加・削除時にセットアップ手順を確認・更新
-- **ディレクトリ構成の変更**: ファイル移動・リネーム時にドキュメント内のパス参照を更新
-- **機能の追加・変更**: ユーザー向け機能が変わったら使い方ドキュメントを更新
-- **インフラ構成の変更**: デプロイ手順やアーキテクチャ図を更新
+- **API changes**: Update API docs when endpoints are added, modified, or removed
+- **Config changes**: Update README or setup guides when env vars or config items change
+- **Dependency changes**: Review and update setup instructions when packages are added or removed
+- **Directory structure changes**: Update path references in docs when files are moved or renamed
+- **Feature changes**: Update usage docs when user-facing features change
+- **Infrastructure changes**: Update deploy procedures and architecture diagrams
 
-### 対象ドキュメント
+### Target Documents
 
-以下のファイルが存在する場合、変更内容に応じて更新を検討する:
+Check and update these files if they exist:
 
 - `README.md`
-- `docs/` 配下のドキュメント
+- Files under `docs/`
 - `CHANGELOG.md`
 - `CONTRIBUTING.md`
-- API ドキュメント（OpenAPI, GraphQL スキーマ等）
-- アーキテクチャ決定記録（ADR）
+- API documentation (OpenAPI, GraphQL schema, etc.)
+- Architecture Decision Records (ADR)
 
-### 作業完了時のチェック
+### Completion Checklist
 
-作業を完了する前に、以下を確認する:
+Before finishing work, verify:
 
-1. 今回の変更に関連するドキュメントはあるか
-2. ある場合、内容は最新の状態を反映しているか
-3. 新しい機能や概念を追加した場合、ドキュメントを新規作成する必要はないか
+1. Are there documents related to this change?
+2. If so, do they reflect the current state?
+3. If new features or concepts were added, should new documentation be created?
