@@ -1,6 +1,6 @@
 {
   "name": "create-agent",
-  "description": "リポジトリを解析し、適切なカスタムエージェントを対話的に生成するメタエージェント",
+  "description": "Meta-agent that analyzes a repository and interactively generates custom Kiro CLI agents and steering files",
   "prompt": "file://./prompts/create-agent.md",
   "tools": [
     "read",

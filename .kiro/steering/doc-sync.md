@@ -1,19 +1,19 @@
-# ドキュメント同期ルール
+# Document Sync Rule
 
-## 目的
+## Purpose
 
-エージェント設定やテンプレートを変更した際、関連ドキュメントも同時に更新する。
+Keep documentation in sync when agent configs or templates change.
 
-## ルール
+## Rules
 
-### 変更時にドキュメント更新が必要なケース
+### When Documentation Updates Are Required
 
-- **エージェントの追加・変更**: `agents/` 配下のファイルを変更したら README.md のエージェント一覧を更新
-- **steering テンプレートの追加・変更**: `steering-templates/` を変更したら README.md と create-agent プロンプトのテンプレート一覧を更新
-- **Makefile の変更**: install/uninstall の手順が変わったら README.md のセットアップ手順を更新
-- **ディレクトリ構成の変更**: README.md の構成セクションを更新
+- **Agent added/changed**: Update README.md agent list when files under `agents/` change
+- **Steering template added/changed**: Update README.md and create-agent prompt template list when `steering-templates/` changes
+- **Makefile changed**: Update README.md setup instructions if install/uninstall procedures change
+- **Directory structure changed**: Update the structure section in README.md
 
-### 対象ドキュメント
+### Target Documents
 
 - `README.md`
-- `agents/prompts/create-agent.md`（テンプレート一覧やフロー定義）
+- `agents/prompts/create-agent.md` (template list and flow definitions)
