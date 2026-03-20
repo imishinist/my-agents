@@ -99,7 +99,7 @@ Propose appropriate presets based on the analysis results.
 - allowedTools: `["read"]`
 - toolsSettings.write.allowedPaths: source directories (e.g. `src/**`, `lib/**`, `app/**`)
 - resources: `file://README.md`, main config files (all with `file://` prefix)
-- hooks.agentSpawn: `git status --porcelain`, `git branch --show-current`
+- hooks: `{"agentSpawn": [{"command": "git status --porcelain"}, {"command": "git branch --show-current"}]}`
 
 **review** — Code review
 - Recommended: all repositories
@@ -107,7 +107,7 @@ Propose appropriate presets based on the analysis results.
 - allowedTools: `["read", "shell"]`
 - toolsSettings.shell.allowedCommands: `["grep", "find", "wc", "head", "tail", "cat", "diff", "git diff", "git log"]` + linter commands
 - resources: coding standards, linter config (all with `file://` prefix)
-- hooks.agentSpawn: `git diff --name-only HEAD~1`
+- hooks: `{"agentSpawn": [{"command": "git diff --name-only HEAD~1"}]}`
 
 **test** — Test creation & execution
 - Recommended: when test framework detected
@@ -123,7 +123,7 @@ Propose appropriate presets based on the analysis results.
 - allowedTools: `["read"]`
 - toolsSettings.write.allowedPaths: infra files (`infra/**`, `infrastructure/**`, `cdk/**`, `terraform/**`, `*.tf`, `Dockerfile`, `docker-compose.yml`)
 - resources: infra documentation (all with `file://` prefix)
-- hooks.agentSpawn: `aws sts get-caller-identity` (when AWS)
+- hooks: `{"agentSpawn": [{"command": "aws sts get-caller-identity"}]}` (when AWS)
 
 **architect** — Design & documentation
 - Recommended: medium-to-large repositories
@@ -243,11 +243,17 @@ If templates not found, generate directly based on the preset descriptions above
   "allowedTools": [...],
   "toolsSettings": {...},
   "resources": ["file://{path}", ...],
-  "hooks": {...}
+  "hooks": {
+    "agentSpawn": [
+      { "command": "{command}" }
+    ]
+  }
 }
 ```
 
-**Important**: All `resources` entries must use the `file://` prefix (e.g. `file://README.md`, `file://docs/guide.md`). Bare paths like `README.md` are not valid.
+**Important**:
+- All `resources` entries must use the `file://` prefix (e.g. `file://README.md`, `file://docs/guide.md`). Bare paths like `README.md` are not valid.
+- Each hook trigger (`agentSpawn`, etc.) must be an array of `{ "command": "..." }` objects. A plain string array like `["cmd1", "cmd2"]` is invalid.
 
 #### Prompt .md Template
 
