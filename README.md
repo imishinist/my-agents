@@ -30,7 +30,8 @@ steering-templates/            # create-agent が使うテンプレート
 ├── doc-sync.md                # ドキュメント同期ルール
 ├── coding-standards.md        # コーディング規約
 ├── architecture-decisions.md  # アーキテクチャ決定記録
-└── self-update.md             # ガイドライン自己更新ルール
+├── self-update.md             # ガイドライン自己更新ルール
+└── sandbox-awareness.md       # sandbox環境の権限エラー検知
 .kiro/steering/                # このリポジトリ用の steering
 ├── doc-sync.md
 └── self-update.md
@@ -50,3 +51,4 @@ steering-templates/            # create-agent が使うテンプレート
 | coding-standards | コーディング規約（言語・FW検出に基づいて生成） |
 | architecture-decisions | 設計変更時にADR等を更新するルール |
 | self-update | ガイドライン自体を変更に応じて更新するメタルール |
+| sandbox-awareness | sandbox環境での権限エラーを検知しユーザーに伝えるルール |
