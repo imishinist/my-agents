@@ -1,0 +1,18 @@
+[package]
+name = "conducer-state"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+acp-types = { path = "../acp-types" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["migrate"] }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+utoipa = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true }
