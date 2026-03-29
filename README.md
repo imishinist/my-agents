@@ -1,8 +1,10 @@
 # my-agents
 
-Kiro CLI カスタムエージェントの管理リポジトリ。
+Kiro CLI / Claude Code カスタムエージェントの管理リポジトリ。
 
 ## セットアップ
+
+### Kiro CLI
 
 ```bash
 make install      # ~/.kiro/agents/ にシンボリックリンクを作成
@@ -11,39 +13,83 @@ make install-copy # シンボリックリンクが動かない場合のフォー
 make list         # ソースとインストール済みエージェントの一覧
 ```
 
-## 使い方
+### Claude Code
 
 ```bash
-# create-agent でリポジトリに合ったエージェントを対話的に生成
+make claude-install      # ~/.claude/commands/ にシンボリックリンクを作成
+make claude-uninstall    # シンボリックリンクを削除
+make claude-install-copy # フォールバック（コピー）
+make claude-list         # ソースとインストール済みコマンドの一覧
+```
+
+### 両方まとめて
+
+```bash
+make all-install    # Kiro + Claude Code 両方インストール
+make all-uninstall  # 両方アンインストール
+make all-list       # 両方の一覧
+```
+
+## 使い方
+
+### Kiro CLI
+
+```bash
 cd /path/to/your-project
 kiro-cli --agent create-agent
+```
+
+### Claude Code
+
+```bash
+cd /path/to/your-project
+claude
+# Claude Code 内で /user:create-agent を実行
 ```
 
 ## 構成
 
 ```
-agents/
-├── create-agent.json      # メタエージェント（エージェント生成用）
+agents/                        # Kiro CLI 用
+├── create-agent.json          # メタエージェント（エージェント生成用）
 └── prompts/
-    └── create-agent.md    # create-agent のプロンプト定義
-steering-templates/            # create-agent が使うテンプレート
-├── doc-sync.md                # ドキュメント同期ルール
-├── coding-standards.md        # コーディング規約
-├── architecture-decisions.md  # アーキテクチャ決定記録
-├── self-update.md             # ガイドライン自己更新ルール
-└── sandbox-awareness.md       # sandbox環境の権限エラー検知
+    └── create-agent.md        # create-agent のプロンプト定義
+steering-templates/            # Kiro create-agent が使うテンプレート
+├── doc-sync.md
+├── coding-standards.md
+├── architecture-decisions.md
+├── self-update.md
+└── sandbox-awareness.md
+claude-commands/               # Claude Code 用
+└── create-agent.md            # メタコマンド（CLAUDE.md・コマンド生成用）
+claude-templates/              # Claude create-agent が使うテンプレート
+├── doc-sync.md
+├── coding-standards.md
+├── architecture-decisions.md
+├── self-update.md
+└── sandbox-awareness.md
 .kiro/steering/                # このリポジトリ用の steering
 ├── doc-sync.md
 └── self-update.md
 ```
 
-## エージェント一覧
+## エージェント / コマンド一覧
+
+### Kiro CLI エージェント
 
 | エージェント | 用途 |
 |---|---|
 | create-agent | リポジトリを解析し、適切なカスタムエージェントを対話的に生成するメタエージェント |
 
-## steering テンプレート一覧
+### Claude Code カスタムコマンド
+
+| コマンド | 呼び出し | 用途 |
+|---|---|---|
+| create-agent | `/user:create-agent` | リポジトリを解析し、CLAUDE.md とカスタムコマンドを対話的に生成するメタコマンド |
+
+## テンプレート一覧
+
+Kiro 用 (`steering-templates/`) と Claude Code 用 (`claude-templates/`) で同じプリセットを提供:
 
 | テンプレート | 用途 |
 |---|---|
