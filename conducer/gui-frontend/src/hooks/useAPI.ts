@@ -19,6 +19,8 @@ export const api = {
       body: JSON.stringify({ title, description }),
     }),
   getEpic: (id: string) => fetchJSON<Epic>(`/api/epics/${id}`),
+  retryEpic: (id: string) =>
+    fetch(`${BASE}/api/epics/${id}/retry`, { method: 'POST' }),
 
   listFeatures: () => fetchJSON<Feature[]>('/api/features'),
   getFeature: (id: string) => fetchJSON<Feature>(`/api/features/${id}`),

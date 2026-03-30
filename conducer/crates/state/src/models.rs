@@ -7,8 +7,9 @@ pub struct Epic {
     pub id: String,
     pub title: String,
     pub description: String,
-    /// draft | active | completed | cancelled
+    /// draft | active | completed | cancelled | error
     pub status: String,
+    pub last_error: Option<String>,
     pub created_at: String,
     pub updated_at: String,
     pub completed_at: Option<String>,

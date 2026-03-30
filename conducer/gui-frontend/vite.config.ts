@@ -4,7 +4,11 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Prevent vite from obscuring Rust errors
+  clearScreen: false,
   server: {
+    port: 5173,
+    strictPort: true,
     proxy: {
       '/api': 'http://localhost:7700',
       '/acp': 'http://localhost:7700',

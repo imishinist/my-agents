@@ -8,7 +8,7 @@ import { EpicForm } from './components/EpicForm';
 import { ActivityFeed } from './components/ActivityFeed';
 
 export default function App() {
-  const { epics, features, workers, actions, messages, loading, refresh, createEpic, respondToAction } = useStore();
+  const { epics, features, workers, actions, messages, loading, refresh, createEpic, retryEpic, respondToAction } = useStore();
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -24,8 +24,21 @@ export default function App() {
         <div className="flex items-center gap-4">
           {activeEpic && (
             <span className="text-sm text-gray-500">
-              {activeEpic.title} — <span className="font-medium">{activeEpic.status}</span>
+              {activeEpic.title} — <span className={`font-medium ${activeEpic.status === 'error' ? 'text-red-600' : ''}`}>{activeEpic.status}</span>
             </span>
+          )}
+          {activeEpic?.status === 'error' && activeEpic.last_error && (
+            <div className="flex items-center gap-2">
+              <span className="max-w-md truncate text-xs text-red-500" title={activeEpic.last_error}>
+                {activeEpic.last_error}
+              </span>
+              <button
+                className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                onClick={() => retryEpic(activeEpic.id)}
+              >
+                Retry
+              </button>
+            </div>
           )}
           {actions.length > 0 && (
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">

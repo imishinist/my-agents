@@ -29,6 +29,7 @@ use conducer_state::{models::*, queries};
         create_epic,
         list_epics,
         get_epic,
+        retry_epic_decompose,
         list_features,
         get_feature,
         list_workers,
@@ -62,6 +63,7 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         // State API for GUI
         .route("/api/epics", get(list_epics).post(create_epic))
         .route("/api/epics/{id}", get(get_epic))
+        .route("/api/epics/{id}/retry", post(retry_epic_decompose))
         .route("/api/features", get(list_features))
         .route("/api/features/{id}", get(get_feature))
         .route("/api/workers", get(list_workers))
@@ -171,38 +173,74 @@ async fn create_epic(
         data: serde_json::to_string(&epic).unwrap_or_default(),
     });
 
-    // Trigger PM Agent decomposition in background
-    {
-        let state = Arc::clone(&state);
-        let epic_id = id.as_str().to_string();
-        tokio::spawn(async move {
-            tracing::info!("PM Agent: decomposing epic {}", epic_id);
-            match state.pm_agent.decompose_epic(&epic_id).await {
-                Ok(feature_ids) => {
-                    tracing::info!("PM Agent: created {} features for epic {}", feature_ids.len(), epic_id);
-                    let _ = state.event_tx.send(SseEvent {
-                        event_type: "epic.decomposed".to_string(),
-                        data: serde_json::json!({
-                            "epic_id": epic_id,
-                            "feature_count": feature_ids.len(),
-                        }).to_string(),
-                    });
-                }
-                Err(e) => {
-                    tracing::error!("PM Agent: failed to decompose epic {}: {}", epic_id, e);
-                    let _ = state.event_tx.send(SseEvent {
-                        event_type: "epic.decompose_failed".to_string(),
-                        data: serde_json::json!({
-                            "epic_id": epic_id,
-                            "error": e.to_string(),
-                        }).to_string(),
-                    });
-                }
-            }
-        });
-    }
+    spawn_decompose(Arc::clone(&state), id.as_str().to_string());
 
     Ok((StatusCode::CREATED, Json(epic)))
+}
+
+/// Retry decomposition for a failed epic
+#[utoipa::path(
+    post,
+    path = "/api/epics/{id}/retry",
+    params(("id" = String, Path, description = "Epic ID")),
+    responses(
+        (status = 200, description = "Retry started"),
+        (status = 404, description = "Epic not found"),
+    ),
+    tag = "epics"
+)]
+async fn retry_epic_decompose(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let epic = queries::get_epic(&state.pool, &id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, "Epic not found".to_string()))?;
+
+    if epic.status != "error" && epic.status != "draft" {
+        return Err((StatusCode::BAD_REQUEST, format!("Epic is in '{}' status, cannot retry", epic.status)));
+    }
+
+    // Reset to draft
+    queries::update_epic_status(&state.pool, &id, "draft")
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    spawn_decompose(Arc::clone(&state), id);
+
+    Ok(StatusCode::OK)
+}
+
+/// Spawn PM Agent decomposition in background.
+fn spawn_decompose(state: Arc<AppState>, epic_id: String) {
+    tokio::spawn(async move {
+        tracing::info!("PM Agent: decomposing epic {}", epic_id);
+        match state.pm_agent.decompose_epic(&epic_id).await {
+            Ok(feature_ids) => {
+                tracing::info!("PM Agent: created {} features for epic {}", feature_ids.len(), epic_id);
+                let _ = state.event_tx.send(SseEvent {
+                    event_type: "epic.decomposed".to_string(),
+                    data: serde_json::json!({
+                        "epic_id": epic_id,
+                        "feature_count": feature_ids.len(),
+                    }).to_string(),
+                });
+            }
+            Err(e) => {
+                let error_msg = e.to_string();
+                tracing::error!("PM Agent: failed to decompose epic {}: {}", epic_id, error_msg);
+                let _ = queries::update_epic_error(&state.pool, &epic_id, &error_msg).await;
+                let _ = state.event_tx.send(SseEvent {
+                    event_type: "epic.decompose_failed".to_string(),
+                    data: serde_json::json!({
+                        "epic_id": epic_id,
+                        "error": error_msg,
+                    }).to_string(),
+                });
+            }
+        }
+    });
 }
 
 /// List all epics

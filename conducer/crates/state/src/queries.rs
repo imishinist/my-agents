@@ -28,7 +28,7 @@ pub async fn list_epics(pool: &SqlitePool) -> Result<Vec<Epic>, sqlx::Error> {
 }
 
 pub async fn update_epic_status(pool: &SqlitePool, id: &str, status: &str) -> Result<(), sqlx::Error> {
-    let mut query = String::from("UPDATE epics SET status = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')");
+    let mut query = String::from("UPDATE epics SET status = ?, last_error = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')");
     if status == "completed" {
         query.push_str(", completed_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')");
     }
@@ -38,6 +38,17 @@ pub async fn update_epic_status(pool: &SqlitePool, id: &str, status: &str) -> Re
         .bind(id)
         .execute(pool)
         .await?;
+    Ok(())
+}
+
+pub async fn update_epic_error(pool: &SqlitePool, id: &str, error: &str) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE epics SET status = 'error', last_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?"
+    )
+    .bind(error)
+    .bind(id)
+    .execute(pool)
+    .await?;
     Ok(())
 }
 

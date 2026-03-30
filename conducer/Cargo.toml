@@ -6,6 +6,7 @@ members = [
     "crates/sandbox",
     "crates/worker-adapter",
     "crates/orchestrator",
+    "crates/gui",
     "crates/cli",
 ]
 

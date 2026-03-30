@@ -1,0 +1,18 @@
+[package]
+name = "conducer-gui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+conducer-orchestrator = { path = "../orchestrator" }
+conducer-state = { path = "../state" }
+tauri = { version = "2", features = [] }
+tauri-build = { version = "2", features = [] }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }

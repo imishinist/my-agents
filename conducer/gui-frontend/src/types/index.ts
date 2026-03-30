@@ -2,7 +2,8 @@ export interface Epic {
   id: string;
   title: string;
   description: string;
-  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  status: 'draft' | 'active' | 'completed' | 'cancelled' | 'error';
+  last_error: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
