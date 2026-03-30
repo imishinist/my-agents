@@ -19,16 +19,16 @@ pub async fn run_server(db_path: &Path, addr: SocketAddr) -> Result<(), Box<dyn 
     let pool = conducer_state::db::init_pool(db_path).await?;
     let (event_tx, _) = broadcast::channel::<SseEvent>(256);
 
-    // Auto-detect available LLM backend: prefer claude (if not rate-limited), fallback to kiro-cli
-    let llm: Box<dyn crate::llm::LlmClient> = if which_works("claude", &["--version"]) {
-        tracing::info!("Using Claude Code CLI as LLM backend");
-        Box::new(ClaudeCodeClient::new())
-    } else if which_works("kiro-cli", &["--version"]) {
+    // Default to Kiro CLI
+    let llm: Box<dyn crate::llm::LlmClient> = if which_works("kiro-cli", &["--version"]) {
         tracing::info!("Using Kiro CLI as LLM backend");
         Box::new(KiroCliClient::new())
-    } else {
-        tracing::warn!("No LLM CLI found (claude or kiro-cli). PM Agent will fail.");
+    } else if which_works("claude", &["--version"]) {
+        tracing::info!("Using Claude Code CLI as LLM backend");
         Box::new(ClaudeCodeClient::new())
+    } else {
+        tracing::warn!("No LLM CLI found (kiro-cli or claude). PM Agent will fail.");
+        Box::new(KiroCliClient::new())
     };
 
     let pm_agent = PmAgent::new(llm, pool.clone());
