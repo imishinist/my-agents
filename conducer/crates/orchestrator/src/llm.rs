@@ -77,7 +77,9 @@ impl LlmClient for ClaudeCodeClient {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(LlmError::Api(format!("claude CLI failed: {}", stderr)));
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let msg = if stderr.is_empty() { stdout } else { stderr };
+            return Err(LlmError::Api(format!("claude CLI failed: {}", msg.trim())));
         }
 
         let response = String::from_utf8_lossy(&output.stdout).to_string();
@@ -85,7 +87,7 @@ impl LlmClient for ClaudeCodeClient {
     }
 }
 
-// --- ACP Agent ---
+// --- Kiro CLI ---
 
 /// Kiro CLI adapter - runs `kiro-cli chat --no-interactive` with system prompt.
 pub struct KiroCliClient {
@@ -121,7 +123,9 @@ impl LlmClient for KiroCliClient {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(LlmError::Api(format!("kiro-cli failed: {}", stderr)));
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let msg = if stderr.is_empty() { stdout } else { stderr };
+            return Err(LlmError::Api(format!("kiro-cli failed: {}", msg.trim())));
         }
 
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
