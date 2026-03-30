@@ -433,4 +433,132 @@ mod tests {
 
         assert_eq!(resp.status(), StatusCode::OK);
     }
+
+    // --- ProcessManager tests ---
+
+    #[tokio::test]
+    async fn test_process_manager_track_and_stop() {
+        use crate::process_mgr::ProcessManager;
+        use conducer_worker_adapter::{WorkerAdapter, WorkerError, WorkerHandle, SpawnConfig};
+
+        // A mock adapter that doesn't actually spawn anything
+        struct MockAdapter;
+
+        #[async_trait::async_trait]
+        impl WorkerAdapter for MockAdapter {
+            async fn spawn(&self, config: &SpawnConfig<'_>) -> Result<WorkerHandle, WorkerError> {
+                Ok(WorkerHandle {
+                    pid: 99999,
+                    worker_id: config.worker_id.to_string(),
+                    worktree_path: config.worktree_path.to_string_lossy().to_string(),
+                })
+            }
+            async fn stop(&self, _handle: &WorkerHandle) -> Result<(), WorkerError> {
+                Ok(())
+            }
+            fn runtime_name(&self) -> &'static str {
+                "mock"
+            }
+        }
+
+        // Use a temp dir as project root with a git repo
+        let dir = tempfile::tempdir().unwrap();
+        let project_root = dir.path();
+        tokio::process::Command::new("git")
+            .args(["init"])
+            .current_dir(project_root)
+            .output()
+            .await
+            .unwrap();
+        tokio::process::Command::new("git")
+            .args(["commit", "--allow-empty", "-m", "init"])
+            .current_dir(project_root)
+            .output()
+            .await
+            .unwrap();
+
+        let mgr = ProcessManager::new(
+            Box::new(MockAdapter),
+            project_root,
+            7710,
+            "test prompt".to_string(),
+        );
+
+        assert!(!mgr.is_running("w-1").await);
+
+        let envelope = acp_types::ContextEnvelope {
+            architecture_summary: String::new(),
+            relevant_interfaces: vec![],
+            allowed_paths: vec![],
+            read_paths: vec![],
+            constraints: vec![],
+            branch_prefix: "feat/test".to_string(),
+        };
+
+        let handle = mgr
+            .spawn_worker("w-1", "feat/test-pm", "Test feature", "spec", &envelope)
+            .await
+            .unwrap();
+
+        assert_eq!(handle.worker_id, "w-1");
+        assert!(mgr.is_running("w-1").await);
+        assert_eq!(mgr.active_workers().await.len(), 1);
+
+        mgr.stop_worker("w-1").await.unwrap();
+        assert!(!mgr.is_running("w-1").await);
+        assert!(mgr.active_workers().await.is_empty());
+    }
+
+    // --- HeartbeatMonitor tests ---
+
+    #[tokio::test]
+    async fn test_heartbeat_detects_stalled_worker() {
+        use crate::heartbeat::HeartbeatMonitor;
+        use std::time::Duration;
+
+        let state = setup_state().await;
+
+        // Create a worker and set it to busy with an old heartbeat
+        conducer_state::queries::create_worker(&state.pool, "w-stall", "claude-code")
+            .await
+            .unwrap();
+        conducer_state::queries::update_worker_status(&state.pool, "w-stall", "busy")
+            .await
+            .unwrap();
+        // Set heartbeat to 1 hour ago
+        sqlx::query(
+            "UPDATE workers SET last_heartbeat = strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-60 minutes') WHERE id = ?",
+        )
+        .bind("w-stall")
+        .execute(&state.pool)
+        .await
+        .unwrap();
+
+        let mut rx = state.event_tx.subscribe();
+
+        let monitor = HeartbeatMonitor::new(
+            state.pool.clone(),
+            state.event_tx.clone(),
+            Duration::from_millis(50),
+            5, // 5 minute timeout
+        );
+
+        // Run monitor in background
+        let monitor_handle = tokio::spawn(monitor.run());
+
+        // Wait for stall detection
+        let event = tokio::time::timeout(Duration::from_secs(2), rx.recv())
+            .await
+            .expect("Should receive stall event")
+            .unwrap();
+
+        assert_eq!(event.event_type, "worker.stalled");
+        assert!(event.data.contains("w-stall"));
+
+        // Verify worker status was updated
+        let workers = conducer_state::queries::list_workers(&state.pool).await.unwrap();
+        assert_eq!(workers[0].status, "stalled");
+
+        monitor_handle.abort();
+    }
 }

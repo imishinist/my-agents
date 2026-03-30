@@ -1,0 +1,57 @@
+[auto_allow]
+commands = [
+  "cargo build",
+  "cargo test",
+  "cargo check",
+  "cargo fmt",
+  "cargo clippy",
+  "rustfmt",
+  "git add",
+  "git commit",
+  "git checkout",
+  "git branch",
+  "git diff",
+  "git log",
+  "git status",
+  "git stash",
+  "ls",
+  "cat",
+  "grep",
+  "rg",
+  "find",
+  "wc",
+  "mkdir",
+  "touch",
+]
+
+[orchestrator_approve]
+commands = [
+  "cargo add *",
+  "git push",
+  "gh pr create",
+  "gh pr merge",
+  "npm install *",
+]
+
+[po_approve]
+commands = [
+  "git push --force",
+  "git reset --hard",
+  "rm -rf *",
+  "cargo install *",
+  "curl *",
+  "wget *",
+  "sh *",
+  "bash *",
+  "python *",
+  "node *",
+]
+
+[deny]
+commands = [
+  "sudo *",
+  "chmod 777 *",
+  "chown *",
+  "kill *",
+  "pkill *",
+]

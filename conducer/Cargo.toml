@@ -3,6 +3,8 @@ resolver = "2"
 members = [
     "crates/acp-types",
     "crates/state",
+    "crates/sandbox",
+    "crates/worker-adapter",
     "crates/orchestrator",
     "crates/cli",
 ]

@@ -1,0 +1,19 @@
+[auto_allow]
+domains = [
+  "crates.io",
+  "static.crates.io",
+  "index.crates.io",
+  "github.com",
+  "api.github.com",
+  "objects.githubusercontent.com",
+  "registry.npmjs.org",
+]
+
+[conditional_allow]
+domains = [
+  "api.openai.com",
+  "api.anthropic.com",
+]
+
+[deny]
+domains = ["*"]

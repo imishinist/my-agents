@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 acp-types = { path = "../acp-types" }
 conducer-state = { path = "../state" }
+conducer-sandbox = { path = "../sandbox" }
+conducer-worker-adapter = { path = "../worker-adapter" }
 axum = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
