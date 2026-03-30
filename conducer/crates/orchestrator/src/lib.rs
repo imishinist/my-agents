@@ -1,3 +1,4 @@
+pub mod event_loop;
 pub mod heartbeat;
 pub mod llm;
 pub mod pm_agent;

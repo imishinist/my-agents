@@ -561,4 +561,234 @@ mod tests {
 
         monitor_handle.abort();
     }
+
+    // --- Review pipeline tests ---
+
+    fn mock_review_approved_response() -> &'static str {
+        r#"```json
+{
+    "verdict": "approved",
+    "summary": "Implementation looks correct and complete",
+    "comments": []
+}
+```"#
+    }
+
+    fn mock_review_changes_response() -> &'static str {
+        r#"```json
+{
+    "verdict": "changes_requested",
+    "summary": "Missing test coverage",
+    "comments": [
+        {
+            "file": "src/auth.rs",
+            "line": 42,
+            "severity": "error",
+            "message": "No unit tests for the auth module",
+            "suggestion": "Add tests for login and logout flows"
+        }
+    ]
+}
+```"#
+    }
+
+    fn mock_clarification_answer_response() -> &'static str {
+        r#"```json
+{"answer": "Use Redis for token storage based on the stateless constraint", "escalate": false}
+```"#
+    }
+
+    fn mock_clarification_escalate_response() -> &'static str {
+        r#"```json
+{"answer": null, "escalate": true, "escalation_reason": "This is an architectural decision that needs PO input"}
+```"#
+    }
+
+    #[tokio::test]
+    async fn test_review_pr_approved() {
+        let state = setup_state_with_response(mock_review_approved_response()).await;
+
+        // Create epic + feature + set feature to pr_submitted
+        conducer_state::queries::create_epic(&state.pool, "epic-r1", "Test", "desc")
+            .await
+            .unwrap();
+        conducer_state::queries::create_feature(
+            &state.pool, "feat-r1", "epic-r1", "Auth module", "Implement auth", "[]", "high",
+        )
+        .await
+        .unwrap();
+        conducer_state::queries::update_feature_status(&state.pool, "feat-r1", "pr_submitted")
+            .await
+            .unwrap();
+
+        let result = state.pm_agent.review_pr("feat-r1", "diff content here").await.unwrap();
+        assert_eq!(result.verdict, "approved");
+
+        // Feature should be merged
+        let feature = conducer_state::queries::get_feature(&state.pool, "feat-r1")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.status, "merged");
+
+        // Review should be saved
+        let reviews = conducer_state::queries::list_reviews_by_feature(&state.pool, "feat-r1")
+            .await
+            .unwrap();
+        assert_eq!(reviews.len(), 1);
+        assert_eq!(reviews[0].verdict, "approved");
+    }
+
+    #[tokio::test]
+    async fn test_review_pr_changes_requested() {
+        let state = setup_state_with_response(mock_review_changes_response()).await;
+
+        conducer_state::queries::create_epic(&state.pool, "epic-r2", "Test", "desc")
+            .await
+            .unwrap();
+        conducer_state::queries::create_feature(
+            &state.pool, "feat-r2", "epic-r2", "Auth module", "Implement auth", "[]", "high",
+        )
+        .await
+        .unwrap();
+
+        let result = state.pm_agent.review_pr("feat-r2", "diff").await.unwrap();
+        assert_eq!(result.verdict, "changes_requested");
+        assert_eq!(result.comments.len(), 1);
+        assert_eq!(result.comments[0].severity, "error");
+
+        let feature = conducer_state::queries::get_feature(&state.pool, "feat-r2")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.status, "changes_requested");
+    }
+
+    #[tokio::test]
+    async fn test_answer_clarification_direct() {
+        let state = setup_state_with_response(mock_clarification_answer_response()).await;
+
+        conducer_state::queries::create_epic(&state.pool, "epic-c1", "Test", "desc")
+            .await
+            .unwrap();
+        conducer_state::queries::create_feature(
+            &state.pool, "feat-c1", "epic-c1", "Token storage", "Implement tokens", "[]", "high",
+        )
+        .await
+        .unwrap();
+
+        let answer = state
+            .pm_agent
+            .answer_clarification("feat-c1", "Redis or DB?", "Need to store tokens")
+            .await
+            .unwrap();
+
+        assert!(!answer.escalate);
+        assert!(answer.answer.unwrap().contains("Redis"));
+    }
+
+    #[tokio::test]
+    async fn test_answer_clarification_escalate() {
+        let state = setup_state_with_response(mock_clarification_escalate_response()).await;
+
+        conducer_state::queries::create_epic(&state.pool, "epic-c2", "Test", "desc")
+            .await
+            .unwrap();
+        conducer_state::queries::create_feature(
+            &state.pool, "feat-c2", "epic-c2", "Architecture", "Design system", "[]", "high",
+        )
+        .await
+        .unwrap();
+
+        let answer = state
+            .pm_agent
+            .answer_clarification("feat-c2", "Monolith or microservices?", "")
+            .await
+            .unwrap();
+
+        assert!(answer.escalate);
+        assert!(answer.answer.is_none());
+        assert!(answer.escalation_reason.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_check_epic_completion() {
+        let state = setup_state().await;
+
+        conducer_state::queries::create_epic(&state.pool, "epic-comp", "Test", "desc")
+            .await
+            .unwrap();
+        state.pm_agent.decompose_epic("epic-comp").await.unwrap();
+
+        // Not complete yet
+        assert!(!state.pm_agent.check_epic_completion("epic-comp").await.unwrap());
+
+        // Merge all features
+        let features = conducer_state::queries::list_features_by_epic(&state.pool, "epic-comp")
+            .await
+            .unwrap();
+        for f in &features {
+            conducer_state::queries::update_feature_status(&state.pool, &f.id, "merged")
+                .await
+                .unwrap();
+        }
+
+        // Now complete
+        assert!(state.pm_agent.check_epic_completion("epic-comp").await.unwrap());
+
+        let epic = conducer_state::queries::get_epic(&state.pool, "epic-comp")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(epic.status, "completed");
+    }
+
+    #[tokio::test]
+    async fn test_event_loop_pr_submitted_triggers_review() {
+        let state = setup_state_with_response(mock_review_approved_response()).await;
+        let mut rx = state.event_tx.subscribe();
+
+        // Setup: epic + feature
+        conducer_state::queries::create_epic(&state.pool, "epic-ev1", "Test", "desc")
+            .await
+            .unwrap();
+        conducer_state::queries::create_feature(
+            &state.pool, "feat-ev1", "epic-ev1", "Module", "Build it", "[]", "high",
+        )
+        .await
+        .unwrap();
+
+        // Simulate pr.submitted event
+        let payload = serde_json::json!({
+            "type": "pr.submitted",
+            "feature_id": "feat-ev1",
+            "pr_number": 1,
+            "branch_name": "feat/module",
+            "summary": "Added module implementation",
+            "files_changed": ["src/module.rs"],
+            "test_results": {"passed": 5, "failed": 0, "skipped": 0},
+            "lint_clean": true
+        });
+
+        crate::event_loop::handle_acp_event(&state, "pr.submitted", &payload).await;
+
+        // Should receive review.completed event
+        let event = tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            rx.recv(),
+        )
+        .await
+        .expect("Should receive event")
+        .unwrap();
+
+        assert_eq!(event.event_type, "review.completed");
+        assert!(event.data.contains("approved"));
+
+        // Feature should be merged
+        let feature = conducer_state::queries::get_feature(&state.pool, "feat-ev1")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.status, "merged");
+    }
 }

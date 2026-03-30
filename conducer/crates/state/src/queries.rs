@@ -310,3 +310,37 @@ pub async fn decide_permission(
     .await?;
     Ok(())
 }
+
+// --- Reviews ---
+
+pub async fn create_review(
+    pool: &SqlitePool,
+    id: &str,
+    feature_id: &str,
+    pr_number: i64,
+    reviewer: &str,
+    verdict: &str,
+    summary: Option<&str>,
+    comments: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "INSERT INTO reviews (id, feature_id, pr_number, reviewer, verdict, summary, comments) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(id)
+    .bind(feature_id)
+    .bind(pr_number)
+    .bind(reviewer)
+    .bind(verdict)
+    .bind(summary)
+    .bind(comments)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn list_reviews_by_feature(pool: &SqlitePool, feature_id: &str) -> Result<Vec<Review>, sqlx::Error> {
+    sqlx::query_as::<_, Review>("SELECT * FROM reviews WHERE feature_id = ? ORDER BY created_at DESC")
+        .bind(feature_id)
+        .fetch_all(pool)
+        .await
+}

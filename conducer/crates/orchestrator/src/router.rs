@@ -114,8 +114,19 @@ async fn handle_acp_message(
     // Broadcast event for SSE
     let _ = state.event_tx.send(SseEvent {
         event_type: message.message_type.clone(),
-        data: payload_json,
+        data: payload_json.clone(),
     });
+
+    // Trigger event-driven actions in background
+    {
+        let state = Arc::clone(&state);
+        let msg_type = message.message_type.clone();
+        let payload: serde_json::Value =
+            serde_json::from_str(&payload_json).unwrap_or_default();
+        tokio::spawn(async move {
+            crate::event_loop::handle_acp_event(&state, &msg_type, &payload).await;
+        });
+    }
 
     Ok(StatusCode::ACCEPTED)
 }

@@ -219,6 +219,139 @@ pub struct Assignment {
     pub context_envelope: ContextEnvelope,
 }
 
+/// Review result from PM Agent
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReviewResult {
+    pub verdict: String,
+    pub summary: String,
+    #[serde(default)]
+    pub comments: Vec<ReviewCommentOutput>,
+    pub escalation_reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReviewCommentOutput {
+    pub file: String,
+    pub line: u32,
+    pub severity: String,
+    pub message: String,
+    pub suggestion: Option<String>,
+}
+
+/// Clarification answer from PM Agent
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClarificationAnswer {
+    pub answer: Option<String>,
+    pub escalate: bool,
+    pub escalation_reason: Option<String>,
+}
+
+impl PmAgent {
+    /// Review a PR diff against the Feature specification.
+    pub async fn review_pr(
+        &self,
+        feature_id: &str,
+        pr_diff: &str,
+    ) -> Result<ReviewResult, PmError> {
+        let feature = queries::get_feature(&self.pool, feature_id)
+            .await?
+            .ok_or_else(|| PmError::Parse(format!("Feature {} not found", feature_id)))?;
+
+        let system_prompt = include_str!("../../../prompts/pm-system.md");
+        let review_template = include_str!("../../../prompts/pm-review.md");
+
+        let user_prompt = review_template
+            .replace("{{feature_title}}", &feature.title)
+            .replace("{{feature_spec}}", &feature.specification)
+            .replace("{{pr_diff}}", pr_diff);
+
+        let response = self.llm.complete(system_prompt, &user_prompt).await?;
+        let json_str = extract_json_block(&response);
+
+        let result: ReviewResult = serde_json::from_str(json_str)
+            .map_err(|e| PmError::Parse(format!("Failed to parse review: {}. Response: {}", e, response)))?;
+
+        // Save review to DB
+        let review_id = ReviewId::new();
+        let comments_json = serde_json::to_string(&result.comments)
+            .unwrap_or_else(|_| "[]".to_string());
+
+        queries::create_review(
+            &self.pool,
+            review_id.as_str(),
+            feature_id,
+            feature.pr_number.unwrap_or(0),
+            "pm",
+            &result.verdict,
+            Some(&result.summary),
+            &comments_json,
+        )
+        .await?;
+
+        // Update feature status based on verdict
+        match result.verdict.as_str() {
+            "approved" => {
+                queries::update_feature_status(&self.pool, feature_id, "merged").await?;
+            }
+            "changes_requested" => {
+                queries::update_feature_status(&self.pool, feature_id, "changes_requested")
+                    .await?;
+            }
+            "escalated" => {
+                queries::update_feature_status(&self.pool, feature_id, "blocked").await?;
+            }
+            _ => {}
+        }
+
+        Ok(result)
+    }
+
+    /// Answer a clarification request from a Worker.
+    /// Returns an answer if PM can handle it, or signals escalation to PO.
+    pub async fn answer_clarification(
+        &self,
+        feature_id: &str,
+        question: &str,
+        context: &str,
+    ) -> Result<ClarificationAnswer, PmError> {
+        let feature = queries::get_feature(&self.pool, feature_id)
+            .await?
+            .ok_or_else(|| PmError::Parse(format!("Feature {} not found", feature_id)))?;
+
+        let system_prompt = include_str!("../../../prompts/pm-system.md");
+
+        let user_prompt = format!(
+            "A Worker implementing feature \"{}\" has a question.\n\n\
+             ## Feature Specification\n{}\n\n\
+             ## Worker's Question\n{}\n\n\
+             ## Context\n{}\n\n\
+             If you can answer confidently based on the specification and project context, respond with:\n\
+             ```json\n{{\"answer\": \"your answer\", \"escalate\": false}}\n```\n\n\
+             If you cannot answer and need PO input, respond with:\n\
+             ```json\n{{\"answer\": null, \"escalate\": true, \"escalation_reason\": \"why PO needs to decide\"}}\n```",
+            feature.title, feature.specification, question, context
+        );
+
+        let response = self.llm.complete(system_prompt, &user_prompt).await?;
+        let json_str = extract_json_block(&response);
+
+        serde_json::from_str(json_str)
+            .map_err(|e| PmError::Parse(format!("Failed to parse clarification answer: {}. Response: {}", e, response)))
+    }
+
+    /// Check if all features of an epic are merged, and if so mark epic as completed.
+    pub async fn check_epic_completion(&self, epic_id: &str) -> Result<bool, PmError> {
+        let features = queries::list_features_by_epic(&self.pool, epic_id).await?;
+        let all_merged = features.iter().all(|f| f.status == "merged");
+
+        if all_merged && !features.is_empty() {
+            queries::update_epic_status(&self.pool, epic_id, "completed").await?;
+        }
+
+        Ok(all_merged)
+    }
+}
+
 /// Extract a JSON block from a response that may contain markdown fences
 fn extract_json_block(response: &str) -> &str {
     // Try to find ```json ... ``` block
