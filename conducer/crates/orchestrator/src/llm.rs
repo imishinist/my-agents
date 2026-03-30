@@ -87,6 +87,49 @@ impl LlmClient for ClaudeCodeClient {
 
 // --- ACP Agent ---
 
+/// Kiro CLI adapter - runs `kiro-cli chat --no-interactive` with system prompt.
+pub struct KiroCliClient {
+    pub model: Option<String>,
+}
+
+impl KiroCliClient {
+    pub fn new() -> Self {
+        Self { model: None }
+    }
+
+    pub fn with_model(mut self, model: impl Into<String>) -> Self {
+        self.model = Some(model.into());
+        self
+    }
+}
+
+#[async_trait]
+impl LlmClient for KiroCliClient {
+    async fn complete(&self, system_prompt: &str, user_prompt: &str) -> Result<String, LlmError> {
+        let prompt = format!("{}\n\n{}", system_prompt, user_prompt);
+        let mut cmd = tokio::process::Command::new("kiro-cli");
+        cmd.arg("chat")
+            .arg("--no-interactive")
+            .arg("--trust-all-tools")
+            .arg(&prompt);
+
+        if let Some(model) = &self.model {
+            cmd.arg("--model").arg(model);
+        }
+
+        let output = cmd.output().await?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(LlmError::Api(format!("kiro-cli failed: {}", stderr)));
+        }
+
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    }
+}
+
+// --- ACP Agent (HTTP) ---
+
 /// ACP-based LLM client. Sends a prompt to a coding agent via ACP HTTP,
 /// and receives the response. This allows using any ACP-compatible agent
 /// (Claude Code, Kiro, etc.) as the LLM backend without direct API costs.
@@ -168,6 +211,10 @@ pub enum LlmBackendConfig {
     ClaudeCode {
         model: Option<String>,
     },
+    /// Use Kiro CLI
+    KiroCli {
+        model: Option<String>,
+    },
     /// Use an ACP-compatible agent as LLM backend
     AcpAgent {
         endpoint: String,
@@ -180,6 +227,13 @@ impl LlmBackendConfig {
         match self {
             LlmBackendConfig::ClaudeCode { model } => {
                 let mut client = ClaudeCodeClient::new();
+                if let Some(m) = model {
+                    client = client.with_model(m);
+                }
+                Box::new(client)
+            }
+            LlmBackendConfig::KiroCli { model } => {
+                let mut client = KiroCliClient::new();
                 if let Some(m) = model {
                     client = client.with_model(m);
                 }
